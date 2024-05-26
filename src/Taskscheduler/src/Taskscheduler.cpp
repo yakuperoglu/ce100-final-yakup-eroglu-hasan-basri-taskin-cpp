@@ -342,3 +342,233 @@ bool printFlowAlgorithmsMenu(ostream& out) {
 	out << "3. Exit\n";
 	return true;
 }
+
+
+
+//MENUS
+
+/**
+ * @brief Displays and handles the create task menu.
+ *
+ * This function displays the create task menu and processes user input to perform various task-related operations.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 0 when the user chooses to exit the menu.
+ */
+int createTaskMenu(istream& in, ostream& out) {
+	int choice;
+
+	while (true) {
+		printCreateTaskMenu(out);
+		choice = getInput(in);
+
+		if (in.fail()) { handleInputError(in, out); continue; }
+
+		switch (choice) {
+		case 1:
+			addTaskMenu(pathFileTasks, in, out);
+			break;
+		case 2:
+			categorizeTask(pathFileTasks, in, out);
+			break;
+		case 3:
+			viewTask(pathFileTasks, in, out);
+			break;
+		case 4:
+			similarTasks(pathFileTasks, in, out);
+			break;
+		case 5:
+			allegiances(pathFileTasks, in, out);
+			break;
+		case 6:
+			analyzeSCC(pathFileTasks, in, out);
+			break;
+		case 7:
+			huffmanEncodingTaskMenu(pathFileTasks, in, out);
+			break;
+		case 8:
+			return 0;
+		default:
+			out << "\nInvalid choice. Please try again.\n";
+			enterToContinue(in, out);
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Displays and handles the deadline settings menu.
+ *
+ * This function displays the deadline settings menu and processes user input to assign or view deadlines.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 0 when the user chooses to exit the menu.
+ */
+int deadlineSettingsMenu(istream& in, ostream& out) {
+	int choice;
+
+	while (true) {
+		printDeadlineSettingsMenu(out);
+		choice = getInput(in);
+
+		if (in.fail()) { handleInputError(in, out); continue; }
+
+		switch (choice) {
+		case 1:
+			assignDeadline(pathFileTasks, in, out);
+			break;
+		case 2:
+			viewDeadlines(pathFileTasks, in, out);
+			break;
+		case 3:
+			return 0;
+		default:
+			out << "\nInvalid choice. Please try again.\n";
+			enterToContinue(in, out);
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Displays and handles the reminder system menu.
+ *
+ * This function displays the reminder system menu and processes user input to set reminders or manage notification settings.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 0 when the user chooses to exit the menu.
+ */
+int reminderSystemMenu(istream& in, ostream& out) {
+	int choice;
+
+	while (true) {
+		printReminderSystemMenu(out);
+		choice = getInput(in);
+
+		if (in.fail()) { handleInputError(in, out); continue; }
+
+		switch (choice) {
+		case 1:
+			setReminders(in, out);
+			break;
+		case 2:
+			notificationSettings(in, out);
+			break;
+		case 3:
+			return 0;
+		default:
+			out << "\nInvalid choice. Please try again.\n";
+			enterToContinue(in, out);
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Displays and handles the task prioritization menu.
+ *
+ * This function displays the task prioritization menu and processes user input to mark task importance, reorder tasks, calculate MST, or find the shortest path.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 0 when the user chooses to exit the menu.
+ */
+int taskPrioritizationMenu(istream& in, ostream& out) {
+	int choice;
+
+	while (true) {
+		printTaskPrioritizationMenu(out);
+		choice = getInput(in);
+
+		if (in.fail()) { handleInputError(in, out); continue; }
+
+		switch (choice) {
+		case 1:
+			markTaskImportance(pathFileTasks, in, out);
+			break;
+		case 2:
+			reorderTask(pathFileTasks, in, out);
+			break;
+		case 3:
+			calculateMST(in, out);
+			break;
+		case 4:
+			shortestPath(in, out);
+			break;
+		case 5:
+			return 0;
+		default:
+			out << "\nInvalid choice. Please try again.\n";
+			enterToContinue(in, out);
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Displays and handles the flow algorithms menu.
+ *
+ * This function displays the flow algorithms menu and processes user input to choose between the Ford-Fulkerson and Edmonds-Karp algorithms for calculating maximum flow.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 0 when the user chooses to exit the menu.
+ */
+int flowAlgorithmsMenu(istream& in, ostream& out) {
+	int choice;
+	int source, sink;
+	int V = MAX_TASKS;
+	int** graph = new int* [V];
+	for (int i = 0; i < V; i++) {
+		graph[i] = new int[V]();
+	}
+
+	while (true) {
+		printFlowAlgorithmsMenu(out);
+		choice = getInput(in);
+
+		if (in.fail()) { handleInputError(in, out); continue; }
+
+		if (choice == 3) {
+			for (int i = 0; i < V; i++) {
+				delete[] graph[i];
+			}
+			delete[] graph;
+			return 0;
+		}
+
+		viewTaskForFunc(pathFileTasks, in, out);
+		out << "\nEnter the source task ID:\n";
+		source = getInput(in);
+		out << "Enter the sink task ID:\n";
+		sink = getInput(in);
+
+		if (source < 0 || source >= V || sink < 0 || sink >= V) {
+			out << "Invalid task ID.\n";
+			enterToContinue(in, out);
+			continue;
+		}
+
+		loadTasksAndDependencies(pathFileTasks);
+
+		int maxFlow = 0;
+		if (choice == 1) {
+			maxFlow = fordFulkerson(graph, source, sink, V);
+		}
+		else if (choice == 2) {
+			maxFlow = edmondsKarp(graph, source, sink, V);
+		}
+		else {
+			out << "Invalid choice.\n";
+			enterToContinue(in, out);
+			continue;
+		}
+
+		out << "Maximum flow from task " << source << " to task " << sink << " is: " << maxFlow << endl;
+		enterToContinue(in, out);
+	}
+}
+
