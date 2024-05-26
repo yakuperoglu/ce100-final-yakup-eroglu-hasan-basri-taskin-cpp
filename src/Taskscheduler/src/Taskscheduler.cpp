@@ -1408,3 +1408,103 @@ bool shortestPath(istream& in, ostream& out) {
 }
 
 
+//Algorithms
+
+
+/**
+ * @brief Loads tasks and their dependencies from the binary file.
+ *
+ * This function reads tasks from the specified binary file and adds edges with weights to the adjacency list.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @return bool Returns true if tasks are loaded successfully, otherwise false.
+ */
+bool loadTasksAndDependencies(const char* pathFileTasks) {
+	FILE* file = fopen(pathFileTasks, "rb");
+	if (!file) {
+		cout << "Failed to open task file." << endl;
+		return false;
+	}
+
+	Task task;
+	while (fread(&task, sizeof(Task), 1, file)) {
+		for (int i = 0; i < task.numDependencies; i++) {
+			int depId = task.dependencies[i];
+			int weight = task.id + depId;
+			addEdgeWithWeight(task.id, depId, weight);
+		}
+	}
+	fclose(file);
+	return true;
+}
+
+/**
+ * @brief Performs Breadth-First Search (BFS) on the task graph.
+ *
+ * This function performs BFS starting from the specified vertex and returns the number of connected tasks.
+ *
+ * @param startVertex The starting vertex for BFS.
+ * @return int The number of tasks connected to the starting vertex.
+ */
+int BFS(int startVertex) {
+	bool visited[MAX_TASKS] = { false };
+	queue<int> queue;
+	int connectedCount = 0;
+
+	visited[startVertex] = true;
+	queue.push(startVertex);
+
+	while (!queue.empty()) {
+		int current = queue.front();
+		queue.pop();
+		connectedCount++;
+
+		for (const auto& adjPair : adj[current]) {
+			int adj = adjPair.first;
+			if (!visited[adj]) {
+				visited[adj] = true;
+				queue.push(adj);
+			}
+		}
+	}
+
+	return connectedCount;
+}
+
+/**
+ * @brief Utility function for Depth-First Search (DFS).
+ *
+ * This function recursively performs DFS starting from the specified vertex and returns the number of connected tasks.
+ *
+ * @param vertex The current vertex in DFS.
+ * @param visited Array to track visited vertices.
+ * @return int The number of tasks connected to the current vertex.
+ */
+int DFSUtil(int vertex, bool visited[]) {
+	visited[vertex] = true;
+	int connectedCount = 1;
+
+	for (const auto& adjPair : adj[vertex]) {
+		int adj = adjPair.first;
+		if (!visited[adj]) {
+			connectedCount += DFSUtil(adj, visited);
+		}
+	}
+
+	return connectedCount;
+}
+
+/**
+ * @brief Performs Depth-First Search (DFS) on the task graph.
+ *
+ * This function performs DFS starting from the specified vertex and returns the number of connected tasks.
+ *
+ * @param startVertex The starting vertex for DFS.
+ * @return int The number of tasks connected to the starting vertex.
+ */
+int DFS(int startVertex) {
+	bool visited[MAX_TASKS] = { false };
+	return DFSUtil(startVertex, visited);
+}
+
+
