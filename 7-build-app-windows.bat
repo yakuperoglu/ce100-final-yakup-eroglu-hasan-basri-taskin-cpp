@@ -74,8 +74,8 @@ start "Install Release" cmake --install build_win --config Release --strip
 echo Test CMAKE
 cd build_win
 :: Test are already run with OpenCppCoverage...
-::call ctest -C Debug -j4 --output-on-failure --output-log test_results_windows.log
-call ctest -C Debug -j4 --output-junit testResults_windows.xml --output-log test_results_windows.log
+::call ctest -C Debug -j1 --output-on-failure --output-log test_results_windows.log
+call ctest -C Debug -j1 --output-junit testResults_windows.xml --output-log test_results_windows.log
 call junit2html testResults_windows.xml testResults_windows.html
 call copy testResults_windows.html "..\docs\testresultswin\index.html"
 cd ..

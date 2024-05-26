@@ -40,6 +40,7 @@ set(CRYPTOPP_BUILD_SHARED OFF)
 set(CRYPTOPP_USE_MASTER_BRANCH FALSE)
 
 option(ENABLE_UTILITY "Enable Utility Module" ON)
+option(ENABLE_AES "Enable Aes Module" ON)
 option(ENABLE_TASKSCHEDULER "Enable Taskscheduler Module" ON)
 option(ENABLE_TASKSCHEDULER_APP "Enable Taskscheduler Application" ON)
 option(ENABLE_TESTS "Enable All Tests" ON)
@@ -105,6 +106,11 @@ if(ENABLE_TASKSCHEDULER)
 	add_subdirectory(${ROOT}/taskscheduler)
 endif()
 
+# Aes submodule	
+if(ENABLE_AES)
+	add_subdirectory(${ROOT}/aes)
+endif()
+
 # BigInteger for Crypto submodule
 if(ENABLE_TASKSCHEDULER_APP)
 	add_subdirectory(${ROOT}/taskschedulerapp)
@@ -114,6 +120,7 @@ endif()
 if(ENABLE_TESTS)
 	add_subdirectory(${ROOT}/tests)
 endif()
+
 
 # Include the Google Test framework
 # add_subdirectory(src/tests/googletest)
