@@ -344,6 +344,9 @@ bool printFlowAlgorithmsMenu(ostream& out) {
 }
 
 
+//PRINT MENUS
+
+
 
 //MENUS
 
@@ -704,7 +707,6 @@ int loadTasks(const char* pathFileTasks, Task** tasks) {
 	return count;
 }
 
-
 /**
  * @brief Loads tasks owned by a specific user from the binary file.
  *
@@ -806,7 +808,6 @@ int addTaskMenu(const char* pathFileTasks, istream& in, ostream& out) {
 	enterToContinue(in, out);
 	return 1;
 }
-
 
 /**
  * @brief Displays and handles the categorize task menu.
@@ -1022,7 +1023,6 @@ int setReminders(istream& in, ostream& out) {
 	return 0;
 }
 
-
 /**
  * @brief Manages notification settings.
  *
@@ -1223,7 +1223,6 @@ int reorderTask(const char* pathFileTasks, istream& in, ostream& out) {
 	return 1;
 }
 
-
 /**
  * @brief Finds and displays the most similar tasks based on their descriptions.
  *
@@ -1407,7 +1406,6 @@ bool shortestPath(istream& in, ostream& out) {
 	return true;
 }
 
-
 //Algorithms
 
 
@@ -1506,7 +1504,6 @@ int DFS(int startVertex) {
 	bool visited[MAX_TASKS] = { false };
 	return DFSUtil(startVertex, visited);
 }
-
 
 /**
  * @brief Heapifies a subtree with the root at the given index.
@@ -1710,7 +1707,6 @@ void huffmanEncodingTaskMenu(const char* pathFileTasks, istream& in, ostream& ou
 	enterToContinue(in, out);
 	free(tasks);
 }
-
 
 /**
  * @brief Builds the transpose of a graph.
@@ -2597,4 +2593,3 @@ int mainMenu(istream& in, ostream& out) {
 		}
 	}
 }
-
