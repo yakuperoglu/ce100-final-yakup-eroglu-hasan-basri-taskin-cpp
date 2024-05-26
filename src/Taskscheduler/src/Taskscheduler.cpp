@@ -1023,3 +1023,204 @@ int setReminders(istream& in, ostream& out) {
 }
 
 
+/**
+ * @brief Manages notification settings.
+ *
+ * This function displays and processes user input for managing notification settings.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying messages.
+ * @return int Always returns 0.
+ */
+int notificationSettings(istream& in, ostream& out) {
+	int choice;
+
+	out << "Select notification method:" << endl;
+	out << "1. SMS" << endl;
+	out << "2. E-Mail" << endl;
+	out << "3. Notification" << endl;
+	out << "Enter your choice: ";
+	choice = getInput(in);
+
+	switch (choice) {
+	case 1:
+		out << "Your reminder has been set to SMS." << endl;
+		enterToContinue(in, out);
+		break;
+	case 2:
+		out << "Your reminder has been set to E-Mail." << endl;
+		enterToContinue(in, out);
+		break;
+	case 3:
+		out << "Your reminder has been set to Notification." << endl;
+		enterToContinue(in, out);
+		break;
+	default:
+		out << "Invalid choice. Please try again." << endl;
+		enterToContinue(in, out);
+		break;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Marks the importance of a task.
+ *
+ * This function displays tasks and allows the user to mark the importance of a selected task.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 1 if the importance is marked successfully, otherwise 0.
+ */
+int markTaskImportance(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+	bool taskAlreadyMarked = false;
+	int unMarkedTaskCount = 0;
+
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].impid == 0 && !taskAlreadyMarked) {
+			out << "ID: " << tasks[i].id << ", Name: " << tasks[i].name
+				<< ", Description: " << tasks[i].description << endl;
+			unMarkedTaskCount++;
+		}
+	}
+
+	if (taskCount <= 0 || unMarkedTaskCount == 0) {
+		out << "No tasks available to mark importance." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+	out << "Select the task to mark importance by entering its ID:" << endl;
+
+	int selectedTaskId;
+	selectedTaskId = getInput(in);
+
+	Task* selectedTask = nullptr;
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].id == selectedTaskId && tasks[i].impid == 0) {
+			selectedTask = &tasks[i];
+			taskAlreadyMarked = true;
+			break;
+		}
+	}
+
+	if (!selectedTask) {
+		out << "Invalid task ID. Please try again." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	out << "Enter the importance ID for the task: ";
+	int importanceId;
+	importanceId = getInput(in);
+
+	if (importanceId < 0) {
+		out << "Invalid input" << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	selectedTask->impid = importanceId;
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	if (!file) {
+		out << "Failed to open file for writing." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].id == selectedTaskId) {
+			fwrite(selectedTask, sizeof(Task), 1, file);
+		}
+		else {
+			fwrite(&tasks[i], sizeof(Task), 1, file);
+		}
+	}
+	fclose(file);
+
+	out << "Task importance marked successfully." << endl;
+	enterToContinue(in, out);
+	free(tasks);
+	return 1;
+}
+
+/**
+ * @brief Reorders tasks based on importance.
+ *
+ * This function displays tasks and allows the user to reorder a selected task by changing its importance ID.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 1 if the task is reordered successfully, otherwise 0.
+ */
+int reorderTask(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+	int reorderedTaskCount = 0;
+
+	out << "Tasks with importance ID:" << endl;
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].impid != 0) {
+			out << "ID: " << tasks[i].id << ", Importance ID: " << tasks[i].impid
+				<< ", Name: " << tasks[i].name << ", Description: " << tasks[i].description
+				<< ", Category: " << tasks[i].category << ", Deadline: " << tasks[i].deadLine << endl;
+			reorderedTaskCount++;
+		}
+	}
+
+	if (taskCount <= 0 || reorderedTaskCount == 0) {
+		out << "No tasks available to reorder." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	out << "Enter the id of the task to reorder :" << endl;
+	int selectedTaskId;
+	selectedTaskId = getInput(in);
+
+	Task* selectedTask = nullptr;
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].id == selectedTaskId && tasks[i].impid != 0) {
+			selectedTask = &tasks[i];
+			break;
+		}
+	}
+
+	if (!selectedTask) {
+		out << "Invalid task ID. Please try again." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	out << "Enter the new importance ID for the task: ";
+	int newImportanceId;
+	newImportanceId = getInput(in);
+
+	selectedTask->impid = newImportanceId;
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	for (int i = 0; i < taskCount; ++i) {
+		fwrite(&tasks[i], sizeof(Task), 1, file);
+	}
+	fclose(file);
+
+	out << "Task reordered successfully." << endl;
+	enterToContinue(in, out);
+	free(tasks);
+	return 1;
+}
+
+
