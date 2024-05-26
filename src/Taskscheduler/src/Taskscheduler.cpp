@@ -808,3 +808,218 @@ int addTaskMenu(const char* pathFileTasks, istream& in, ostream& out) {
 }
 
 
+/**
+ * @brief Displays and handles the categorize task menu.
+ *
+ * This function displays the categorize task menu and processes user input to categorize tasks.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 1 if the task is categorized successfully, otherwise 0.
+ */
+int categorizeTask(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+	int uncategorizedTaskCount = 0;
+
+	for (int i = 0; i < taskCount; ++i) {
+		if (!tasks[i].isCategorized) {
+			out << "ID: " << tasks[i].id << ", Name: " << tasks[i].name
+				<< ", Description: " << tasks[i].description << endl;
+			uncategorizedTaskCount++;
+		}
+	}
+
+	if (taskCount <= 0 || uncategorizedTaskCount == 0) {
+		out << "No tasks available to categorize." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	out << "\nEnter the ID of the task you want to categorize: ";
+	int selectedTaskId = getInput(in);
+
+	Task* selectedTask = nullptr;
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].id == selectedTaskId && !tasks[i].isCategorized) {
+			selectedTask = &tasks[i];
+			break;
+		}
+	}
+
+	if (!selectedTask) {
+		out << "Invalid task ID. Please try again." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	out << "Select a category for the task:" << endl;
+	out << "1. Work" << endl;
+	out << "2. Sport" << endl;
+	out << "3. Diet" << endl;
+	out << "4. Study" << endl;
+
+	int categoryChoice = getInput(in);
+
+	switch (categoryChoice) {
+	case 1:
+		strcpy(selectedTask->category, "Work");
+		break;
+	case 2:
+		strcpy(selectedTask->category, "Sport");
+		break;
+	case 3:
+		strcpy(selectedTask->category, "Diet");
+		break;
+	case 4:
+		strcpy(selectedTask->category, "Study");
+		break;
+	default:
+		out << "Invalid category choice. Please try again." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	selectedTask->isCategorized = true;
+
+	FILE* file = fopen(pathFileTasks, "wb");
+
+	for (int i = 0; i < taskCount; ++i) {
+		fwrite(&tasks[i], sizeof(Task), 1, file);
+	}
+
+	fclose(file);
+	out << "Task categorized successfully." << endl;
+	enterToContinue(in, out);
+	free(tasks);
+	return 1;
+}
+
+/**
+ * @brief Displays and handles the assign deadline menu.
+ *
+ * This function displays the assign deadline menu and processes user input to assign deadlines to tasks.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 1 if the deadline is assigned successfully, otherwise 0.
+ */
+int assignDeadline(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+	int unDeadlinedTaskCount = 0;
+
+	for (int i = 0; i < taskCount; ++i) {
+		if (!tasks[i].isDeadlined) {
+			out << "ID: " << tasks[i].id << ", Name: " << tasks[i].name
+				<< ", Description: " << tasks[i].description << endl;
+			unDeadlinedTaskCount++;
+		}
+	}
+
+	if (taskCount <= 0 || unDeadlinedTaskCount == 0) {
+		out << "No Tasks Available To Add Deadline." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	out << "\nEnter The ID Of The Task You Want To Add Deadline: ";
+	int selectedTaskId = getInput(in);
+
+	Task* selectedTask = nullptr;
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].id == selectedTaskId && !tasks[i].isDeadlined) {
+			selectedTask = &tasks[i];
+			break;
+		}
+	}
+
+	if (!selectedTask) {
+		out << "Invalid Task ID. Please Try again." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	out << "Enter Deadline Day (1-31): ";
+	int day = getInput(in);
+	out << "Enter Deadline Month (1-12): ";
+	int month = getInput(in);
+	out << "Enter Deadline Year: ";
+	int year = getInput(in);
+
+	if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0) {
+		out << "Invalid date. Please enter valid day, month, and year." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	stringstream deadlineStream;
+	deadlineStream << day << "/" << month << "/" << year;
+	string deadlineStr = deadlineStream.str();
+
+	strncpy(selectedTask->deadLine, deadlineStr.c_str(), sizeof(selectedTask->deadLine) - 1);
+	selectedTask->deadLine[sizeof(selectedTask->deadLine) - 1] = '\0';
+
+	selectedTask->isDeadlined = true;
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	for (int i = 0; i < taskCount; ++i) {
+		fwrite(&tasks[i], sizeof(Task), 1, file);
+	}
+	fclose(file);
+
+	out << "Deadline Added Successfully." << endl;
+	enterToContinue(in, out);
+	free(tasks);
+	return 1;
+}
+
+/**
+ * @brief Sets a reminder.
+ *
+ * This function sets a reminder for a specified duration.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying messages.
+ * @return int Always returns 0.
+ */
+int setReminders(istream& in, ostream& out) {
+	int seconds, minutes, hours, days;
+
+	out << "Enter the reminder duration:" << endl;
+	out << "Seconds: ";
+	seconds = getInput(in);
+	out << "Minutes: ";
+	minutes = getInput(in);
+	out << "Hours: ";
+	hours = getInput(in);
+	out << "Days: ";
+	days = getInput(in);
+
+	int totalSeconds = seconds + minutes * 60 + hours * 3600 + days * 86400;
+
+	if (totalSeconds <= 0) {
+		out << "Invalid duration. Please enter a positive duration." << endl;
+		enterToContinue(in, out);
+		return 0;
+	}
+
+	out << "Setting reminder for " << totalSeconds << " seconds..." << endl;
+	this_thread::sleep_for(chrono::seconds(totalSeconds));
+	out << "Time's up! Reminder triggered after " << totalSeconds << " seconds." << endl;
+
+	enterToContinue(in, out);
+	return 0;
+}
+
+
