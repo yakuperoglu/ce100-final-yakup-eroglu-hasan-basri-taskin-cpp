@@ -231,6 +231,226 @@ TEST_F(TaskschedulerTest, reminderSystemMenu_SetReminders1) {
 }
 
 
+TEST_F(TaskschedulerTest, reminderSystemMenu_SetReminders2) {
+	simulateUserInput("1\n1\n0\n0\n0\n\n3\n6\n4\n");
+	EXPECT_FALSE(reminderSystemMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, reminderSystemMenu_NotificationSettings1) {
+	simulateUserInput("2\n1\n\n3\n6\n4\n");
+	EXPECT_FALSE(reminderSystemMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, reminderSystemMenu_NotificationSettings2) {
+	simulateUserInput("2\n2\n\n3\n6\n4\n");
+	EXPECT_FALSE(reminderSystemMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, reminderSystemMenu_NotificationSettings3) {
+	simulateUserInput("2\n3\n\n3\n6\n4\n");
+	EXPECT_FALSE(reminderSystemMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, reminderSystemMenu_NotificationSettings4) {
+	simulateUserInput("2\n4\n\n3\n6\n4\n");
+	EXPECT_FALSE(reminderSystemMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, taskPrioritizationMenu_Success) {
+	simulateUserInput("5\n");
+	EXPECT_EQ(taskPrioritizationMenu(in, out), 0);
+}
+
+TEST_F(TaskschedulerTest, taskPrioritizationMenu_InvalidChoices) {
+	simulateUserInput("invalid\n\n6\n\n5\n6\n4\n");
+	EXPECT_FALSE(taskPrioritizationMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, taskPrioritizationMenu_MarkTaskImportance) {
+	simulateUserInput("1\n\n5\n5\n6\n4\n");
+	EXPECT_FALSE(taskPrioritizationMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, taskPrioritizationMenu_ReorderTask) {
+	simulateUserInput("2\n\n5\n6\n4\n");
+	EXPECT_FALSE(taskPrioritizationMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, taskPrioritizationMenu_CalculateMST) {
+	simulateUserInput("3\n1\n1\n\n5\n6\n4\n");
+	EXPECT_FALSE(taskPrioritizationMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, taskPrioritizationMenu_shortestPath) {
+	simulateUserInput("4\n1\n1\n\n5\n6\n4\n");
+	EXPECT_FALSE(taskPrioritizationMenu(in, out));
+}
+
+
+TEST_F(TaskschedulerTest, flowAlgorithmsMenu_Success) {
+	simulateUserInput("3\n");
+	EXPECT_EQ(flowAlgorithmsMenu(in, out), 0);
+}
+
+TEST_F(TaskschedulerTest, flowAlgorithmsMenu_InvalidChoices) {
+	simulateUserInput("invalid\n\n4\n\n3\n6\n4\n");
+	EXPECT_FALSE(flowAlgorithmsMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, flowAlgorithmsMenu_FordFulkerson) {
+	simulateUserInput("1\n1\n1\n\n3\n6\n4\n");
+	EXPECT_FALSE(flowAlgorithmsMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, flowAlgorithmsMenu_EdmondsKarp) {
+	simulateUserInput("2\n1\n1\n\n3\n6\n4\n");
+	EXPECT_FALSE(flowAlgorithmsMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, flowAlgorithmsMenu_None) {
+	simulateUserInput("4\n1\n1\n\n3\n6\n4\n");
+	EXPECT_FALSE(flowAlgorithmsMenu(in, out));
+}
+
+
+TEST_F(TaskschedulerTest, viewTaskForFunc_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+	simulateUserInput("\n");
+	EXPECT_TRUE(viewTaskForFunc(pathFileTasks, in, out));
+
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, viewTask_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+	simulateUserInput("\n");
+	EXPECT_TRUE(viewTask(pathFileTasks, in, out));
+
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, viewTask_WithTasks) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasks[1] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "Deadline 1", "Category 1", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasks, sizeof(Task), 1, file);
+	fclose(file);
+
+	simulateUserInput("\n");
+	EXPECT_TRUE(viewTask(pathFileTasks, in, out));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, viewDeadlines_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	simulateUserInput("\n");
+	EXPECT_FALSE(viewDeadlines(pathFileTasks, in, out));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, viewDeadlines_WithTasksAndDeadlines) {
+	const char* pathFileTasks = "tasks_with_deadlines.bin";
+	Task tasks[1] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "01/01/2024", "Category 1", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasks, sizeof(Task), 1, file);
+	fclose(file);
+
+	simulateUserInput("\n");
+	EXPECT_TRUE(viewDeadlines(pathFileTasks, in, out));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, viewDeadlines_WithTasksWithoutDeadlines) {
+	const char* pathFileTasks = "tasks_without_deadlines.bin";
+	Task tasks[1] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "Category 1", true, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasks, sizeof(Task), 1, file);
+	fclose(file);
+
+	simulateUserInput("\n");
+	EXPECT_TRUE(viewDeadlines(pathFileTasks, in, out));
+
+
+	remove(pathFileTasks);
+}
+
+
+TEST_F(TaskschedulerTest, loadTasks_FileNotFound) {
+	const char* pathFileTasks = "non_existent_tasks.bin";
+	Task* tasks = nullptr;
+
+	remove(pathFileTasks);
+
+	int result = loadTasks(pathFileTasks, &tasks);
+	EXPECT_EQ(result, -1);
+}
+
+TEST_F(TaskschedulerTest, loadTasks_EmptyFile) {
+	const char* pathFileTasks = "empty_tasks.bin";
+	Task* tasks = nullptr;
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	int result = loadTasks(pathFileTasks, &tasks);
+	EXPECT_EQ(result, 0);
+
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, loadTasks_WithTasks) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "01/01/2024", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "02/01/2024", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	Task* tasks = nullptr;
+	int result = loadTasks(pathFileTasks, &tasks);
+	EXPECT_EQ(result, 2);
+
+	EXPECT_EQ(tasks[0].id, 1);
+	EXPECT_STREQ(tasks[0].name, "Task 1");
+	EXPECT_STREQ(tasks[0].description, "Description 1");
+	EXPECT_STREQ(tasks[0].deadLine, "01/01/2024");
+
+	EXPECT_EQ(tasks[1].id, 2);
+	EXPECT_STREQ(tasks[1].name, "Task 2");
+	EXPECT_STREQ(tasks[1].description, "Description 2");
+	EXPECT_STREQ(tasks[1].deadLine, "02/01/2024");
+
+	remove(pathFileTasks);
+}
+
 int main(int argc, char** argv) {
 #ifdef ENABLE_TASKSCHEDULER_TEST
 	::testing::InitGoogleTest(&argc, argv);
