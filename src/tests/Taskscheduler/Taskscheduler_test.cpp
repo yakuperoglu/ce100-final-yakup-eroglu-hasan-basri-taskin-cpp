@@ -451,6 +451,200 @@ TEST_F(TaskschedulerTest, loadTasks_WithTasks) {
 	remove(pathFileTasks);
 }
 
+TEST_F(TaskschedulerTest, loadOwnedTasks_FileNotFound) {
+	const char* pathFileTasks = "non_existent_tasks.bin";
+	Task* tasks = nullptr;
+
+	remove(pathFileTasks);
+
+	int result = loadOwnedTasks(pathFileTasks, &tasks, 2);
+	EXPECT_EQ(result, -1);
+
+}
+
+
+TEST_F(TaskschedulerTest, categorizeTask_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	EXPECT_EQ(categorizeTask(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, categorizeTask_WithUncategorizedTasks1) {
+	const char* pathFileTasks = "tasks_with_uncategorized.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n1\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(categorizeTask(pathFileTasks, input, output), 1);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, categorizeTask_WithUncategorizedTasks2) {
+	const char* pathFileTasks = "tasks_with_uncategorized.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n2\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(categorizeTask(pathFileTasks, input, output), 1);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, categorizeTask_WithUncategorizedTasks3) {
+	const char* pathFileTasks = "tasks_with_uncategorized.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n3\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(categorizeTask(pathFileTasks, input, output), 1);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, categorizeTask_WithUncategorizedTasks4) {
+	const char* pathFileTasks = "tasks_with_uncategorized.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n4\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(categorizeTask(pathFileTasks, input, output), 1);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, categorizeTask_WithUncategorizedTasks5) {
+	const char* pathFileTasks = "tasks_with_uncategorized.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n5\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(categorizeTask(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, categorizeTask_InvalidTaskID) {
+	const char* pathFileTasks = "tasks_with_uncategorized.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("3\n1\n");
+	std::stringstream output;
+
+	EXPECT_EQ(categorizeTask(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+
+TEST_F(TaskschedulerTest, assignDeadline_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	EXPECT_EQ(assignDeadline(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, assignDeadline_WithUncategorizedTasks) {
+	const char* pathFileTasks = "tasks_with_uncategorized.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n15\n12\n2024\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(assignDeadline(pathFileTasks, input, output), 1);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, assignDeadline_InvalidDate) {
+	const char* pathFileTasks = "tasks_with_uncategorized.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n32\n12\n2024\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(assignDeadline(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+
 int main(int argc, char** argv) {
 #ifdef ENABLE_TASKSCHEDULER_TEST
 	::testing::InitGoogleTest(&argc, argv);
