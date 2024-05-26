@@ -704,3 +704,107 @@ int loadTasks(const char* pathFileTasks, Task** tasks) {
 	return count;
 }
 
+
+/**
+ * @brief Loads tasks owned by a specific user from the binary file.
+ *
+ * This function loads tasks owned by the specified user from the binary file and stores them in the provided array.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param tasks Pointer to an array of Task objects.
+ * @param userId The ID of the user whose tasks are to be loaded.
+ * @return int The number of tasks loaded.
+ */
+int loadOwnedTasks(const char* pathFileTasks, Task** tasks, int userId) {
+	FILE* file = fopen(pathFileTasks, "rb");
+	if (!file) {
+		printf("Failed to open file\n");
+		return -1;
+	}
+
+	Task temp;
+	int count = 0;
+	while (fread(&temp, sizeof(Task), 1, file) == 1) {
+		if (temp.owner.id == userId) {
+			*tasks = (Task*)realloc(*tasks, (count + 1) * sizeof(Task));
+			(*tasks)[count] = temp;
+			count++;
+		}
+	}
+	fclose(file);
+	return count;
+}
+
+/**
+ * @brief Adds a new task to the binary file.
+ *
+ * This function appends a new task to the specified binary file.
+ *
+ * @param newTask Pointer to the Task object to be added.
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @return int Returns 1 if the task is added successfully, otherwise 0.
+ */
+int addTask(const Task* newTask, const char* pathFileTasks) {
+	FILE* file = fopen(pathFileTasks, "ab");
+	if (!file) {
+		return 0;
+	}
+
+	fwrite(newTask, sizeof(Task), 1, file);
+	fclose(file);
+	return 1;
+}
+
+/**
+ * @brief Displays and handles the add task menu.
+ *
+ * This function displays the add task menu and processes user input to add a new task.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 1 if the task is added successfully, otherwise 0.
+ */
+int addTaskMenu(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task newTask;
+
+	out << "Enter Task Name: ";
+	in.getline(newTask.name, sizeof(newTask.name));
+
+	out << "Enter Task Description: ";
+	in.getline(newTask.description, sizeof(newTask.description));
+
+	newTask.owner = loggedUser;
+	newTask.id = getNewTaskId(pathFileTasks);
+	newTask.isCategorized = false;
+	newTask.isDeadlined = false;
+	newTask.impid = 0;
+	newTask.category[0] = '\0';
+	newTask.deadLine[0] = '\0';
+	newTask.numDependencies = 0;
+
+	out << "Enter number of dependencies for this task: ";
+	int numDeps;
+	in >> numDeps;
+	in.ignore();
+	newTask.numDependencies = numDeps;
+
+	for (int i = 0; i < numDeps; i++) {
+		out << "Enter dependency task ID #" << (i + 1) << ": ";
+		in >> newTask.dependencies[i];
+		in.ignore();
+	}
+
+	if (!addTask(&newTask, pathFileTasks)) {
+		out << "Failed to add Task.\n";
+		enterToContinue(in, out);
+		return 0;
+	}
+
+	out << "Task added successfully.\n";
+	enterToContinue(in, out);
+	return 1;
+}
+
+
