@@ -863,6 +863,181 @@ TEST_F(TaskschedulerTest, allegiances_BFS) {
 	remove(pathFileTasks);
 }
 
+TEST_F(TaskschedulerTest, allegiances_DFS) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("2\n1\n\n");
+	std::stringstream output;
+
+	EXPECT_TRUE(allegiances(pathFileTasks, input, output));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, allegiances_InvalidStartID) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n3\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(allegiances(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, allegiances_WrongAlgorithmInput) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("3\n1\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(allegiances(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+
+TEST_F(TaskschedulerTest, calculateMST_InvalidStartID) {
+	std::stringstream input("-1\n\n");
+	std::stringstream output;
+
+	EXPECT_FALSE(calculateMST(input, output));
+
+}
+
+TEST_F(TaskschedulerTest, calculateMST_InvalidAlgorithmChoice) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n3\n\n");
+	std::stringstream output;
+
+	EXPECT_TRUE(calculateMST(input, output));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, calculateMST_ValidKruskalChoice) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n2\n\n");
+	std::stringstream output;
+
+	EXPECT_TRUE(calculateMST(input, output));
+
+	remove(pathFileTasks);
+}
+
+
+TEST_F(TaskschedulerTest, shortestPath_InvalidStartID) {
+	std::stringstream input("-1\n\n");
+	std::stringstream output;
+
+	EXPECT_FALSE(shortestPath(input, output));
+
+}
+
+TEST_F(TaskschedulerTest, shortestPath_InvalidAlgorithmChoice) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n3\n\n");
+	std::stringstream output;
+
+	EXPECT_FALSE(shortestPath(input, output));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, shortestPath_ValidBellmanFordChoice) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n2\n\n");
+	std::stringstream output;
+
+	EXPECT_TRUE(shortestPath(input, output));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, loadTasksAndDependencies_FileNotOpened) {
+	const char* invalidPath = "invalid_tasks.bin";
+
+	bool result = loadTasksAndDependencies(invalidPath);
+
+	EXPECT_FALSE(result);
+
+}
+
+
+TEST_F(TaskschedulerTest, huffmanEncodingTaskMenu_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	huffmanEncodingTaskMenu(pathFileTasks, input, output);
+
+	remove(pathFileTasks);
+}
+
 
 int main(int argc, char** argv) {
 #ifdef ENABLE_TASKSCHEDULER_TEST
