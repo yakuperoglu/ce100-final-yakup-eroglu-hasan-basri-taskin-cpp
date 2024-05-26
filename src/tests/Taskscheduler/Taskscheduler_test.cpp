@@ -1177,6 +1177,42 @@ TEST_F(TaskschedulerTest, loginUserMenu_Success) {
 	remove(pathFileUsers);
 }
 
+TEST_F(TaskschedulerTest, loginUserMenu_Failure) {
+	const char* pathFileUsers = "test_users.bin";
+	User usersToWrite[2] = {
+		{1, "TestName1", "TestSurname1", "test1@example.com", "password1"},
+		{2, "TestName2", "TestSurname2", "test2@example.com", "password2"}
+	};
+
+	std::ofstream file(pathFileUsers, std::ios::binary);
+	int userCount = 2;
+	file.write(reinterpret_cast<const char*>(&userCount), sizeof(int));
+	file.write(reinterpret_cast<const char*>(usersToWrite), sizeof(usersToWrite));
+	file.close();
+
+	simulateUserInput("test2@example.com\nwrongpassword\n\n");
+
+	EXPECT_EQ(::loginUserMenu(pathFileUsers, in, out), 0);
+
+	remove(pathFileUsers);
+}
+
+TEST_F(TaskschedulerTest, registerUser_Success) {
+	const char* pathFileUsers = "test_users.bin";
+	User newUser = { 0, "NewName", "NewSurname", "new@example.com", "newpassword" };
+
+	std::ofstream file(pathFileUsers, std::ios::binary);
+	int userCount = 0;
+	file.write(reinterpret_cast<const char*>(&userCount), sizeof(int));
+	file.close();
+
+	simulateUserInput("\n\n");
+
+	EXPECT_EQ(::registerUser(newUser, pathFileUsers, in, out), 1);
+
+	remove(pathFileUsers);
+}
+
 int main(int argc, char** argv) {
 #ifdef ENABLE_TASKSCHEDULER_TEST
 	::testing::InitGoogleTest(&argc, argv);
