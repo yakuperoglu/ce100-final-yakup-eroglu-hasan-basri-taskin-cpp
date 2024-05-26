@@ -572,3 +572,135 @@ int flowAlgorithmsMenu(istream& in, ostream& out) {
 	}
 }
 
+
+//MENUS
+
+/**
+ * @brief Displays and handles viewing tasks.
+ *
+ * This function clears the screen and displays all tasks owned by the logged-in user.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the tasks and messages.
+ * @return bool Always returns true.
+ */
+bool viewTask(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = NULL;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+
+	if (taskCount <= 0) {
+		out << "No Task Created.\n";
+	}
+	else {
+		for (int i = 0; i < taskCount; i++) {
+			out << "ID: " << tasks[i].id << ", Name: " << tasks[i].name
+				<< ", Description: " << tasks[i].description << ", Category: "
+				<< tasks[i].category << ", Deadline: " << tasks[i].deadLine << endl;
+		}
+	}
+
+	enterToContinue(in, out);
+	free(tasks);
+	return true;
+}
+
+/**
+ * @brief Displays tasks for function usage.
+ *
+ * This function clears the screen and displays all tasks owned by the logged-in user without waiting for user input.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the tasks and messages.
+ * @return bool Always returns true.
+ */
+bool viewTaskForFunc(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = NULL;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+
+	if (taskCount <= 0) {
+		out << "No Task Created.\n";
+	}
+	else {
+		for (int i = 0; i < taskCount; i++) {
+			out << "ID: " << tasks[i].id << ", Name: " << tasks[i].name
+				<< ", Description: " << tasks[i].description << ", Category: "
+				<< tasks[i].category << ", Deadline: " << tasks[i].deadLine << endl;
+		}
+	}
+
+	free(tasks);
+	return true;
+}
+
+/**
+ * @brief Displays tasks with deadlines.
+ *
+ * This function clears the screen and displays all tasks owned by the logged-in user that have deadlines assigned.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the tasks and messages.
+ * @return bool Always returns true.
+ */
+bool viewDeadlines(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+
+	if (taskCount <= 0) {
+		out << "No Task Created or Assigned to You." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return false;
+	}
+
+	bool hasDeadlines = false;
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].isDeadlined) {
+			out << "ID: " << tasks[i].id << ", Name: " << tasks[i].name
+				<< ", Description: " << tasks[i].description << ", Category: "
+				<< tasks[i].category << ", Deadline: " << tasks[i].deadLine << endl;
+			hasDeadlines = true;
+		}
+	}
+
+	if (!hasDeadlines) {
+		out << "No Task with Deadline Assigned to You." << endl;
+	}
+
+	enterToContinue(in, out);
+	free(tasks);
+	return true;
+}
+
+/**
+ * @brief Loads all tasks from the binary file.
+ *
+ * This function loads all tasks from the specified binary file and stores them in the provided array.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param tasks Pointer to an array of Task objects.
+ * @return int The number of tasks loaded.
+ */
+int loadTasks(const char* pathFileTasks, Task** tasks) {
+	FILE* file = fopen(pathFileTasks, "rb");
+	if (!file) {
+		printf("Failed to open file\n");
+		return -1;
+	}
+
+	Task temp;
+	int count = 0;
+	while (fread(&temp, sizeof(Task), 1, file) == 1) {
+		*tasks = (Task*)realloc(*tasks, (count + 1) * sizeof(Task));
+		(*tasks)[count] = temp;
+		count++;
+	}
+	fclose(file);
+	return count;
+}
+
