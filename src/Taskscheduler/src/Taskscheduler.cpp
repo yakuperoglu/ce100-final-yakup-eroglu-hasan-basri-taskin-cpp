@@ -1712,4 +1712,572 @@ void huffmanEncodingTaskMenu(const char* pathFileTasks, istream& in, ostream& ou
 }
 
 
+/**
+ * @brief Builds the transpose of a graph.
+ *
+ * This function constructs the transpose of a given graph, where all edges are reversed.
+ *
+ * @param V Number of vertices in the graph.
+ * @param adjLists Adjacency list of the original graph.
+ * @param transpose Adjacency list of the transpose graph.
+ */
+void buildTranspose(int V, list<int>* adjLists, list<int>* transpose) {
+	for (int v = 0; v < V; v++) {
+		for (int u : adjLists[v]) {
+			transpose[u].push_back(v);
+		}
+	}
+}
+
+/**
+ * @brief Utility function for Depth-First Search (DFS) in SCCs.
+ *
+ * This function performs DFS on a graph, used to fill the stack with vertices in the order of completion times.
+ *
+ * @param v Current vertex in DFS.
+ * @param visited Array to track visited vertices.
+ * @param Stack Stack to store the vertices by finish time.
+ * @param graph Adjacency list of the graph.
+ */
+void DFSUtilSCCs(int v, bool visited[], stack<int>& Stack, list<int>* graph) {
+	visited[v] = true;
+
+	for (int i : graph[v]) {
+		if (!visited[i]) {
+			DFSUtilSCCs(i, visited, Stack, graph);
+		}
+	}
+	Stack.push(v);
+}
+
+/**
+ * @brief Finds and prints all Strongly Connected Components (SCCs) in a graph.
+ *
+ * This function finds and prints all SCCs in a graph using Kosaraju's algorithm.
+ *
+ * @param V Number of vertices in the graph.
+ * @param adjLists Adjacency list of the original graph.
+ * @param out Output stream for displaying the SCCs.
+ */
+void findSCCs(int V, list<int>* adjLists, ostream& out) {
+	stack<int> Stack;
+
+	bool* visited = new bool[V];
+	memset(visited, 0, V * sizeof(bool));
+	for (int i = 0; i < V; ++i) {
+		if (!visited[i]) {
+			DFSUtilSCCs(i, visited, Stack, adjLists);
+		}
+	}
+
+	list<int>* transpose = new list<int>[V];
+	buildTranspose(V, adjLists, transpose);
+
+	memset(visited, 0, V * sizeof(bool));
+	int numSCC = 0;
+	while (!Stack.empty()) {
+		int v = Stack.top();
+		Stack.pop();
+
+		if (!visited[v]) {
+			stack<int> componentStack;
+			DFSUtilSCCs(v, visited, componentStack, transpose);
+			numSCC++;
+			out << "SCC #" << numSCC << ": ";
+			while (!componentStack.empty()) {
+				out << componentStack.top() << " ";
+				componentStack.pop();
+			}
+			out << "\n";
+		}
+	}
+
+	delete[] visited;
+	delete[] transpose;
+}
+
+/**
+ * @brief Analyzes and prints Strongly Connected Components (SCCs) of tasks.
+ *
+ * This function loads tasks, builds the task graph, and finds SCCs.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the SCCs.
+ * @return bool Returns true if SCCs are analyzed successfully, otherwise false.
+ */
+bool analyzeSCC(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+	loadTasksAndDependencies(pathFileTasks);
+
+	if (taskCount <= 0) {
+		out << "There is no task." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return false;
+	}
+
+	int V = taskCount;
+	findSCCs(V, adjLists, out);
+	enterToContinue(in, out);
+	return true;
+}
+
+/**
+ * @brief Adds an edge with a specified weight to the adjacency list.
+ *
+ * This function adds a directed edge with a specified weight to the adjacency list of the graph.
+ *
+ * @param u Source vertex of the edge.
+ * @param v Destination vertex of the edge.
+ * @param weight Weight of the edge.
+ */
+void addEdgeWithWeight(int u, int v, int weight) {
+	adj[u].emplace_back(v, weight);
+	adj[v].emplace_back(u, weight);
+}
+
+/**
+ * @brief Finds and prints the Minimum Spanning Tree (MST) using Prim's algorithm.
+ *
+ * This function finds and prints the MST of the graph starting from the given vertex using Prim's algorithm.
+ *
+ * @param startVertex The starting vertex for Prim's algorithm.
+ * @param out Output stream for displaying the MST.
+ */
+void primMST(int startVertex, ostream& out) {
+	int key[MAX_TASKS];
+	int parent[MAX_TASKS];
+	bool inMST[MAX_TASKS];
+
+	for (int i = 0; i < MAX_TASKS; i++) {
+		key[i] = INT_MAX;
+		parent[i] = -1;
+		inMST[i] = false;
+	}
+
+	set<pair<int, int>> pq;
+	pq.insert(make_pair(0, startVertex));
+	key[startVertex] = 0;
+
+	while (!pq.empty()) {
+		int u = pq.begin()->second;
+		pq.erase(pq.begin());
+
+		inMST[u] = true;
+
+		for (auto x : adj[u]) {
+			int v = x.first;
+			int weight = x.second;
+
+			if (!inMST[v] && key[v] > weight) {
+				if (key[v] != INT_MAX) {
+					pq.erase(pq.find(make_pair(key[v], v)));
+				}
+
+				key[v] = weight;
+				pq.insert(make_pair(key[v], v));
+				parent[v] = u;
+			}
+		}
+	}
+
+	out << "Edge \tWeight\n";
+	for (int i = 1; i < MAX_TASKS; ++i) {
+		if (parent[i] != -1) {
+			out << parent[i] << " - " << i << "\t" << key[i] << " \n";
+		}
+	}
+}
+
+/**
+ * @brief Compares two edges based on their weight.
+ *
+ * This function compares two edges and returns true if the first edge has a smaller weight than the second edge.
+ *
+ * @param a The first edge.
+ * @param b The second edge.
+ * @return bool Returns true if the first edge has a smaller weight, otherwise false.
+ */
+bool compareEdges(const Edge& a, const Edge& b) {
+	return a.weight < b.weight;
+}
+
+/**
+ * @brief Finds the root of a set in the union-find data structure.
+ *
+ * This function finds the root of the set containing the given element.
+ *
+ * @param parent The array representing the union-find data structure.
+ * @param i The element whose root is to be found.
+ * @return int The root of the set containing the element.
+ */
+int find(int parent[], int i) {
+	if (parent[i] == -1) {
+		return i;
+	}
+	return find(parent, parent[i]);
+}
+
+/**
+ * @brief Unites two sets in the union-find data structure.
+ *
+ * This function unites the sets containing the two given elements.
+ *
+ * @param parent The array representing the union-find data structure.
+ * @param x The first element.
+ * @param y The second element.
+ */
+void unionSets(int parent[], int x, int y) {
+	int xset = find(parent, x);
+	int yset = find(parent, y);
+	if (xset != yset) {
+		parent[xset] = yset;
+	}
+}
+
+/**
+ * @brief Finds and prints the Minimum Spanning Tree (MST) using Kruskal's algorithm.
+ *
+ * This function finds and prints the MST of the graph using Kruskal's algorithm.
+ *
+ * @param V Number of vertices in the graph.
+ * @param out Output stream for displaying the MST.
+ */
+void kruskalMST(int V, ostream& out) {
+	Edge edges[MAX_TASKS * MAX_TASKS];
+	int edgeCount = 0;
+
+	for (int u = 0; u < V; u++) {
+		for (list<pair<int, int>>::iterator it = adj[u].begin(); it != adj[u].end(); ++it) {
+			edges[edgeCount++] = { u, it->first, it->second };
+		}
+	}
+
+	for (int i = 0; i < edgeCount - 1; i++) {
+		for (int j = 0; j < edgeCount - i - 1; j++) {
+			if (compareEdges(edges[j + 1], edges[j])) {
+				Edge temp = edges[j];
+				edges[j] = edges[j + 1];
+				edges[j + 1] = temp;
+			}
+		}
+	}
+
+	Edge result[MAX_TASKS];
+	int resultIndex = 0;
+	int parent[MAX_TASKS];
+	memset(parent, -1, sizeof(parent));
+
+	for (int i = 0; i < edgeCount; i++) {
+		int x = find(parent, edges[i].src);
+		int y = find(parent, edges[i].dest);
+
+		if (x != y) {
+			result[resultIndex++] = edges[i];
+			unionSets(parent, x, y);
+		}
+	}
+
+	out << "Edge \tWeight\n";
+	for (int i = 0; i < resultIndex; i++) {
+		out << result[i].src << " - " << result[i].dest << "\t" << result[i].weight << " \n";
+	}
+}
+
+/**
+ * @brief Calculates and prints the shortest path from the start vertex using Dijkstra's algorithm.
+ *
+ * This function calculates and prints the shortest path from the start vertex to all other vertices using Dijkstra's algorithm.
+ *
+ * @param startVertex The starting vertex.
+ * @param out Output stream for displaying the shortest paths.
+ */
+void calculateShortestPath(int startVertex, ostream& out) {
+	int dist[MAX_TASKS];
+	bool sptSet[MAX_TASKS];
+
+	for (int i = 0; i < MAX_TASKS; i++) {
+		dist[i] = INT_MAX;
+		sptSet[i] = false;
+	}
+
+	dist[startVertex] = 0;
+
+	for (int count = 0; count < MAX_TASKS - 1; count++) {
+		int u = -1;
+
+		for (int i = 0; i < MAX_TASKS; i++) {
+			if (!sptSet[i] && (u == -1 || dist[i] < dist[u])) {
+				u = i;
+			}
+		}
+
+		if (u == -1 || dist[u] == INT_MAX) {
+			break;
+		}
+
+		sptSet[u] = true;
+
+		for (const auto& adjPair : adj[u]) {
+			int v = adjPair.first;
+			int weight = adjPair.second;
+
+			if (!sptSet[v] && dist[u] != INT_MAX && dist[u] + weight < dist[v]) {
+				dist[v] = dist[u] + weight;
+			}
+		}
+	}
+
+	out << "Vertex\tDistance from Source\n";
+	for (int i = 0; i < MAX_TASKS; i++) {
+		if (dist[i] != INT_MAX) {
+			out << i << "\t" << dist[i] << "\n";
+		}
+	}
+}
+
+/**
+ * @brief Calculates and prints the shortest path from the start vertex using Bellman-Ford algorithm.
+ *
+ * This function calculates and prints the shortest path from the start vertex to all other vertices using the Bellman-Ford algorithm.
+ *
+ * @param startVertex The starting vertex.
+ * @param V Number of vertices in the graph.
+ * @param out Output stream for displaying the shortest paths.
+ */
+void calculateBellmanFord(int startVertex, int V, ostream& out) {
+	int dist[MAX_TASKS];
+
+	for (int i = 0; i < V; i++) {
+		dist[i] = INT_MAX;
+	}
+
+	dist[startVertex] = 0;
+
+	for (int i = 1; i <= V - 1; i++) {
+		for (int u = 0; u < V; u++) {
+			for (auto adjPair : adj[u]) {
+				int v = adjPair.first;
+				int weight = adjPair.second;
+				if (dist[u] != INT_MAX && dist[u] + weight < dist[v]) {
+					dist[v] = dist[u] + weight;
+				}
+			}
+		}
+	}
+
+	for (int u = 0; u < V; u++) {
+		for (auto adjPair : adj[u]) {
+			int v = adjPair.first;
+			int weight = adjPair.second;
+			if (dist[u] != INT_MAX && dist[u] + weight < dist[v]) {
+				out << "Graph contains negative weight cycle" << endl;
+				return;
+			}
+		}
+	}
+
+	out << "Vertex\tDistance from Source\n";
+	for (int i = 0; i < V; i++) {
+		if (dist[i] != INT_MAX) {
+			out << i << "\t" << dist[i] << "\n";
+		}
+	}
+}
+
+/**
+ * @brief Performs Breadth-First Search (BFS) in a residual graph.
+ *
+ * This function performs BFS in the residual graph to find an augmenting path from the source to the sink.
+ *
+ * @param residualGraph The residual graph.
+ * @param source The source vertex.
+ * @param sink The sink vertex.
+ * @param parent Array to store the path.
+ * @param V Number of vertices in the graph.
+ * @return bool Returns true if there is an augmenting path, otherwise false.
+ */
+bool bfs(int** residualGraph, int source, int sink, int parent[], int V) {
+	bool* visited = new bool[V]();
+	std::queue<int> queue;
+	queue.push(source);
+	visited[source] = true;
+	parent[source] = -1;
+
+	while (!queue.empty()) {
+		int u = queue.front();
+		queue.pop();
+
+		for (int v = 0; v < V; v++) {
+			if (!visited[v] && residualGraph[u][v] > 0) {
+				queue.push(v);
+				parent[v] = u;
+				visited[v] = true;
+				if (v == sink) {
+					delete[] visited;
+					return true;
+				}
+			}
+		}
+	}
+
+	delete[] visited;
+	return false;
+}
+
+/**
+ * @brief Finds the maximum flow in a graph using the Edmonds-Karp algorithm.
+ *
+ * This function finds the maximum flow from the source to the sink in the given graph using the Edmonds-Karp algorithm.
+ *
+ * @param graph The capacity graph.
+ * @param source The source vertex.
+ * @param sink The sink vertex.
+ * @param V Number of vertices in the graph.
+ * @return int The maximum flow from the source to the sink.
+ */
+int edmondsKarp(int** graph, int source, int sink, int V) {
+	int** residualGraph = new int* [V];
+	for (int i = 0; i < V; i++) {
+		residualGraph[i] = new int[V];
+		for (int j = 0; j < V; j++) {
+			residualGraph[i][j] = graph[i][j];
+		}
+	}
+
+	int* parent = new int[V];
+	int maxFlow = 0;
+
+	while (bfs(residualGraph, source, sink, parent, V)) {
+		int pathFlow = INT_MAX;
+		for (int v = sink; v != source; v = parent[v]) {
+			int u = parent[v];
+			pathFlow = std::min(pathFlow, residualGraph[u][v]);
+		}
+
+		for (int v = sink; v != source; v = parent[v]) {
+			int u = parent[v];
+			residualGraph[u][v] -= pathFlow;
+			residualGraph[v][u] += pathFlow;
+		}
+
+		maxFlow += pathFlow;
+	}
+
+	for (int i = 0; i < V; i++) {
+		delete[] residualGraph[i];
+	}
+	delete[] residualGraph;
+	delete[] parent;
+
+	return maxFlow;
+}
+
+/**
+ * @brief Performs Depth-First Search (DFS) in a residual graph.
+ *
+ * This function performs DFS in the residual graph to find an augmenting path from the source to the sink.
+ *
+ * @param residualGraph The residual graph.
+ * @param source The source vertex.
+ * @param sink The sink vertex.
+ * @param parent Array to store the path.
+ * @param V Number of vertices in the graph.
+ * @return bool Returns true if there is an augmenting path, otherwise false.
+ */
+bool dfs(int** residualGraph, int source, int sink, int parent[], int V) {
+	bool* visited = new bool[V]();
+	std::stack<int> stack;
+	stack.push(source);
+	visited[source] = true;
+	parent[source] = -1;
+
+	while (!stack.empty()) {
+		int u = stack.top();
+		stack.pop();
+
+		for (int v = 0; v < V; v++) {
+			if (!visited[v] && residualGraph[u][v] > 0) {
+				stack.push(v);
+				parent[v] = u;
+				visited[v] = true;
+				if (v == sink) {
+					delete[] visited;
+					return true;
+				}
+			}
+		}
+	}
+
+	delete[] visited;
+	return false;
+}
+
+/**
+ * @brief Finds the maximum flow in a graph using the Ford-Fulkerson algorithm.
+ *
+ * This function finds the maximum flow from the source to the sink in the given graph using the Ford-Fulkerson algorithm.
+ *
+ * @param graph The capacity graph.
+ * @param source The source vertex.
+ * @param sink The sink vertex.
+ * @param V Number of vertices in the graph.
+ * @return int The maximum flow from the source to the sink.
+ */
+int fordFulkerson(int** graph, int source, int sink, int V) {
+	int** residualGraph = new int* [V];
+	for (int i = 0; i < V; i++) {
+		residualGraph[i] = new int[V];
+		for (int j = 0; j < V; j++) {
+			residualGraph[i][j] = graph[i][j];
+		}
+	}
+
+	int* parent = new int[V];
+	int maxFlow = 0;
+
+	while (dfs(residualGraph, source, sink, parent, V)) {
+		int pathFlow = INT_MAX;
+		for (int v = sink; v != source; v = parent[v]) {
+			int u = parent[v];
+			pathFlow = std::min(pathFlow, residualGraph[u][v]);
+		}
+
+		for (int v = sink; v != source; v = parent[v]) {
+			int u = parent[v];
+			residualGraph[u][v] -= pathFlow;
+			residualGraph[v][u] += pathFlow;
+		}
+
+		maxFlow += pathFlow;
+	}
+
+	for (int i = 0; i < V; i++) {
+		delete[] residualGraph[i];
+	}
+	delete[] residualGraph;
+	delete[] parent;
+
+	return maxFlow;
+}
+
+/*
+void encryptData(uint8_t* data, size_t length) {
+	struct AES_ctx ctx;
+	AES_init_ctx_iv(&ctx, AES_KEY, AES_IV);
+	AES_CBC_encrypt_buffer(&ctx, data, length);
+}
+
+void decryptData(uint8_t* data, size_t length) {
+	struct AES_ctx ctx;
+	AES_init_ctx_iv(&ctx, AES_KEY, AES_IV);
+	AES_CBC_decrypt_buffer(&ctx, data, length);
+}
+
+*/
+
+//Algorithms
 
