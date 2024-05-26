@@ -230,7 +230,6 @@ TEST_F(TaskschedulerTest, reminderSystemMenu_SetReminders1) {
 	EXPECT_FALSE(reminderSystemMenu(in, out));
 }
 
-
 TEST_F(TaskschedulerTest, reminderSystemMenu_SetReminders2) {
 	simulateUserInput("1\n1\n0\n0\n0\n\n3\n6\n4\n");
 	EXPECT_FALSE(reminderSystemMenu(in, out));
@@ -1232,7 +1231,7 @@ TEST_F(TaskschedulerTest, registerUser_UserAlreadyExists) {
 	EXPECT_EQ(::registerUser(newUser, pathFileUsers, in, out), 0);
 
 	remove(pathFileUsers);
-	}
+}
 
 TEST_F(TaskschedulerTest, registerUserMenu_Success) {
 	const char* pathFileUsers = "test_users.bin";
@@ -1277,7 +1276,6 @@ TEST_F(TaskschedulerTest, UserMenu2) {
 	simulateUserInput("2\n3\n6\n4\n");
 	EXPECT_EQ(userOperations(in, out), 0);
 }
-
 
 TEST_F(TaskschedulerTest, UserMenu3) {
 	simulateUserInput("3\n3\n6\n4\n");
