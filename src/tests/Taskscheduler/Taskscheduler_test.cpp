@@ -183,6 +183,52 @@ TEST_F(TaskschedulerTest, createTaskMenu_Allegiances_NoTasks) {
 	EXPECT_FALSE(createTaskMenu(in, out));
 }
 
+TEST_F(TaskschedulerTest, createTaskMenu_analyzeSCC_NoTasks) {
+	simulateUserInput("6\n\n8\n6\n4\n");
+	EXPECT_FALSE(createTaskMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, createTaskMenu_HuffmanEncode_NoTasks) {
+	simulateUserInput("7\n\n8\n8\n6\n4\n");
+	EXPECT_FALSE(createTaskMenu(in, out));
+}
+
+
+TEST_F(TaskschedulerTest, deadlineSettingsMenu_Success) {
+	simulateUserInput("3\n");
+	EXPECT_EQ(deadlineSettingsMenu(in, out), 0);
+}
+
+TEST_F(TaskschedulerTest, deadlineSettingsMenu_InvalidChoices) {
+	simulateUserInput("invalid\n\n4\n\n3\n6\n4\n");
+	EXPECT_FALSE(deadlineSettingsMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, deadlineSettingsMenu_AssignDeadline) {
+	simulateUserInput("1\n\n\n3\n6\n4\n");
+	EXPECT_FALSE(deadlineSettingsMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, deadlineSettingsMenu_ViewDeadlines) {
+	simulateUserInput("2\n\n3\n6\n4\n");
+	EXPECT_FALSE(deadlineSettingsMenu(in, out));
+}
+
+
+TEST_F(TaskschedulerTest, reminderSystemMenu_Success) {
+	simulateUserInput("3\n");
+	EXPECT_EQ(reminderSystemMenu(in, out), 0);
+}
+
+TEST_F(TaskschedulerTest, reminderSystemMenu_InvalidChoices) {
+	simulateUserInput("invalid\n\n4\n\n3\n6\n4\n");
+	EXPECT_FALSE(reminderSystemMenu(in, out));
+}
+
+TEST_F(TaskschedulerTest, reminderSystemMenu_SetReminders1) {
+	simulateUserInput("1\n0\n0\n0\n0\n\n3\n6\n4\n");
+	EXPECT_FALSE(reminderSystemMenu(in, out));
+}
 
 
 int main(int argc, char** argv) {
