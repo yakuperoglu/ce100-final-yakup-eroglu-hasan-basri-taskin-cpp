@@ -1279,6 +1279,33 @@ TEST_F(TaskschedulerTest, UserMenu2) {
 }
 
 
+TEST_F(TaskschedulerTest, UserMenu3) {
+	simulateUserInput("3\n3\n6\n4\n");
+	EXPECT_EQ(userOperations(in, out), 0);
+}
+
+TEST_F(TaskschedulerTest, UserMenu4) {
+	simulateUserInput("4\n5\n6\n4\n");
+	EXPECT_EQ(userOperations(in, out), 0);
+}
+
+TEST_F(TaskschedulerTest, LoginUser_NoUsersRegistered) {
+	const char* pathFileUsers = "test_users.bin";
+
+	std::ofstream file(pathFileUsers, std::ios::binary);
+	int userCount = 0;
+	file.write(reinterpret_cast<const char*>(&userCount), sizeof(int));
+	file.close();
+
+	User loginUser = { 0, "TestName", "TestSurname", "test@example.com", "password" };
+
+	simulateUserInput("\n");
+
+	EXPECT_EQ(::loginUser(loginUser, pathFileUsers, in, out), 0);
+
+	remove(pathFileUsers);
+}
+
 int main(int argc, char** argv) {
 #ifdef ENABLE_TASKSCHEDULER_TEST
 	::testing::InitGoogleTest(&argc, argv);
