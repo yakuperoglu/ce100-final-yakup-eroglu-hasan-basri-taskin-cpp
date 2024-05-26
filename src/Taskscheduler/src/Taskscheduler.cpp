@@ -1224,3 +1224,187 @@ int reorderTask(const char* pathFileTasks, istream& in, ostream& out) {
 }
 
 
+/**
+ * @brief Finds and displays the most similar tasks based on their descriptions.
+ *
+ * This function compares tasks based on their descriptions and finds the two most similar tasks using the longest common subsequence algorithm.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the results.
+ * @return bool Always returns true.
+ */
+bool similarTasks(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+
+	if (taskCount < 2) {
+		out << "Insufficient number of tasks, at least two tasks are required." << endl;
+		return false;
+	}
+
+	int maxLcs = 0;
+	int task1Index = -1, task2Index = -1;
+
+	for (int i = 0; i < taskCount - 1; i++) {
+		for (int j = i + 1; j < taskCount; j++) {
+			int lcsLength = longestCommonSubsequence(tasks[i].description, tasks[j].description);
+			if (lcsLength > maxLcs) {
+				maxLcs = lcsLength;
+				task1Index = i;
+				task2Index = j;
+			}
+		}
+	}
+
+	if (task1Index != -1 && task2Index != -1) {
+		out << "The two most similar tasks are:" << endl;
+		out << "Task 1: " << tasks[task1Index].description << endl;
+		out << "Task 2: " << tasks[task2Index].description << endl;
+		enterToContinue(in, out);
+	}
+	else {
+		out << "No similar task found." << endl;
+		enterToContinue(in, out);
+	}
+	free(tasks);
+	return true;
+}
+
+/**
+ * @brief Displays and handles the task allegiances menu.
+ *
+ * This function displays the task allegiances menu and processes user input to perform BFS or DFS on the tasks.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return bool Always returns true.
+ */
+bool allegiances(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+	int choice, startVertex;
+
+	if (taskCount <= 0) {
+		out << "No Tasks Available." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return 0;
+	}
+
+	out << "Choose algorithm:\n 1. BFS\n 2. DFS\n";
+	choice = getInput(in);
+
+	viewTaskForFunc(pathFileTasks, in, out);
+
+	out << "\nEnter the starting task ID:\n";
+	startVertex = getInput(in);
+
+	if (startVertex > taskCount) {
+		out << "There is no " << startVertex << ". Task";
+		enterToContinue(in, out);
+		return 0;
+	}
+
+	int result = 0;
+	switch (choice) {
+	case 1:
+		result = BFS(startVertex);
+		break;
+	case 2:
+		result = DFS(startVertex);
+		break;
+	default:
+		out << "Wrong Input ";
+		enterToContinue(in, out);
+		return 0;
+	}
+
+	out << "Number of tasks connected to task " << startVertex << " is: " << result << endl;
+	enterToContinue(in, out);
+	return true;
+}
+
+/**
+ * @brief Calculates and displays the minimum spanning tree (MST) of the tasks.
+ *
+ * This function displays the MST menu and processes user input to calculate the MST using Prim's or Kruskal's algorithm.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the results.
+ * @return bool Always returns true.
+ */
+bool calculateMST(istream& in, ostream& out) {
+	viewTaskForFunc(pathFileTasks, in, out);
+	out << "\nEnter the starting task ID:\n";
+	int startVertex = getInput(in);
+
+	if (startVertex >= MAX_TASKS || startVertex < 0) {
+		out << "Invalid task ID." << endl;
+		enterToContinue(in, out);
+		return false;
+	}
+
+	loadTasksAndDependencies(pathFileTasks);
+
+	out << "Choose MST algorithm:\n 1. Prim's Algorithm\n 2. Kruskal's Algorithm\n";
+	int mstChoice = getInput(in);
+
+	if (mstChoice == 1) {
+		primMST(startVertex, out);
+	}
+	else if (mstChoice == 2) {
+		kruskalMST(MAX_TASKS, out);
+	}
+	else {
+		out << "Invalid choice." << endl;
+	}
+
+	enterToContinue(in, out);
+	return true;
+}
+
+/**
+ * @brief Calculates and displays the shortest path between tasks.
+ *
+ * This function displays the shortest path menu and processes user input to calculate the shortest path using Dijkstra's or Bellman-Ford algorithm.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the results.
+ * @return bool Always returns true.
+ */
+bool shortestPath(istream& in, ostream& out) {
+	viewTaskForFunc(pathFileTasks, in, out);
+	out << "\nEnter the starting task ID:\n";
+	int startVertex = getInput(in);
+
+	if (startVertex < 0 || startVertex >= MAX_TASKS) {
+		out << "Invalid task ID.\n";
+		enterToContinue(in, out);
+		return false;
+	}
+
+	out << "Choose shortest path algorithm:\n 1. Dijkstra\n 2. Bellman-Ford\n";
+	int choice = getInput(in);
+
+	switch (choice) {
+	case 1:
+		calculateShortestPath(startVertex, out);
+		break;
+	case 2:
+		calculateBellmanFord(startVertex, MAX_TASKS, out);
+		break;
+	default:
+		out << "Invalid choice.\n";
+		enterToContinue(in, out);
+		return false;
+	}
+
+	enterToContinue(in, out);
+	return true;
+}
+
+
