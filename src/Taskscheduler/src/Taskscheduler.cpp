@@ -1508,3 +1508,208 @@ int DFS(int startVertex) {
 }
 
 
+/**
+ * @brief Heapifies a subtree with the root at the given index.
+ *
+ * This function heapifies a subtree in a max heap with the root at the specified index.
+ *
+ * @param users Array of User objects.
+ * @param n The size of the heap.
+ * @param i The root index of the subtree.
+ */
+void heapify(User users[], int n, int i) {
+	int largest = i;
+	int left = 2 * i + 1;
+	int right = 2 * i + 2;
+
+	if (left < n && users[left].id > users[largest].id)
+		largest = left;
+
+	if (right < n && users[right].id > users[largest].id)
+		largest = right;
+
+	if (largest != i) {
+		User swap = users[i];
+		users[i] = users[largest];
+		users[largest] = swap;
+
+		heapify(users, n, largest);
+	}
+}
+
+/**
+ * @brief Builds a max heap from the given array of users.
+ *
+ * This function builds a max heap from the specified array of User objects.
+ *
+ * @param users Array of User objects.
+ * @param n The size of the array.
+ */
+void buildMaxHeap(User users[], int n) {
+	for (int i = n / 2 - 1; i >= 0; i--)
+		heapify(users, n, i);
+}
+
+/**
+ * @brief Finds the length of the longest common subsequence between two strings.
+ *
+ * This function calculates the length of the longest common subsequence between two given strings.
+ *
+ * @param text1 The first string.
+ * @param text2 The second string.
+ * @return int The length of the longest common subsequence.
+ */
+int longestCommonSubsequence(const char* text1, const char* text2) {
+	int m = strlen(text1);
+	int n = strlen(text2);
+	int dp[101][101] = { 0 };
+
+	for (int i = 1; i <= m; i++) {
+		for (int j = 1; j <= n; j++) {
+			if (text1[i - 1] == text2[j - 1]) {
+				dp[i][j] = dp[i - 1][j - 1] + 1;
+			}
+			else {
+				dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);
+			}
+		}
+	}
+
+	return dp[m][n];
+}
+
+/**
+ * @brief Builds a Huffman tree from the given data.
+ *
+ * This function constructs a Huffman tree based on the frequency of characters in the given data and stores the Huffman codes.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks (unused in this function).
+ * @param data The input data to build the Huffman tree from.
+ * @param size The size of the input data.
+ */
+void buildHuffmanTree(const char* pathFileTasks, const char* data, int size) {
+	unordered_map<char, int> freq;
+	for (int i = 0; i < size; ++i)
+		freq[data[i]]++;
+
+	priority_queue<HuffmanNode*, vector<HuffmanNode*>, compare> minHeap;
+
+	for (auto pair : freq)
+		minHeap.push(new HuffmanNode(pair.first, pair.second));
+
+	while (minHeap.size() != 1) {
+		HuffmanNode* left = minHeap.top();
+		minHeap.pop();
+		HuffmanNode* right = minHeap.top();
+		minHeap.pop();
+
+		HuffmanNode* top = new HuffmanNode('$', left->freq + right->freq);
+		top->left = left;
+		top->right = right;
+		minHeap.push(top);
+	}
+
+	storeCodes(minHeap.top(), "");
+}
+
+/**
+ * @brief Stores Huffman codes for the given Huffman tree.
+ *
+ * This function traverses the Huffman tree and stores the Huffman codes for each character.
+ *
+ * @param root The root of the Huffman tree.
+ * @param str The current Huffman code as a string.
+ */
+void storeCodes(HuffmanNode* root, string str) {
+	if (root == nullptr)
+		return;
+	if (root->data != '$')
+		codes[root->data] = str;
+	storeCodes(root->left, str + "0");
+	storeCodes(root->right, str + "1");
+}
+
+/**
+ * @brief Prints the stored Huffman codes.
+ *
+ * This function prints the Huffman codes for each character to the output stream.
+ *
+ * @param out Output stream for displaying the Huffman codes.
+ */
+void printCodes(ostream& out) {
+	for (auto pair : codes) {
+		out << pair.first << ": " << pair.second << "\n";
+	}
+}
+
+/**
+ * @brief Encodes the given data using the stored Huffman codes.
+ *
+ * This function encodes the input data based on the previously stored Huffman codes.
+ *
+ * @param data The input data to encode.
+ * @param size The size of the input data.
+ * @return string The encoded string.
+ */
+string encode(const char* data, int size) {
+	string encodedString = "";
+	for (int i = 0; i < size; ++i) {
+		encodedString += codes[data[i]];
+	}
+	return encodedString;
+}
+
+/**
+ * @brief Displays and handles the Huffman encoding task menu.
+ *
+ * This function displays the Huffman encoding task menu, processes user input, and encodes the selected task description using Huffman coding.
+ *
+ * @param pathFileTasks Path to the binary file containing tasks.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ */
+void huffmanEncodingTaskMenu(const char* pathFileTasks, istream& in, ostream& out) {
+	clearScreen();
+	Task* tasks = nullptr;
+	int taskCount = loadOwnedTasks(pathFileTasks, &tasks, loggedUser.id);
+
+	if (taskCount <= 0) {
+		out << "No tasks available to encode." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return;
+	}
+
+	out << "Select a task to encode by entering its ID:" << endl;
+	for (int i = 0; i < taskCount; i++) {
+		out << "ID: " << tasks[i].id << " - " << tasks[i].name << endl;
+	}
+
+	int selectedTaskId = getInput(in);
+	Task* selectedTask = nullptr;
+	for (int i = 0; i < taskCount; ++i) {
+		if (tasks[i].id == selectedTaskId) {
+			selectedTask = &tasks[i];
+			break;
+		}
+	}
+
+	if (!selectedTask) {
+		out << "Invalid task ID. Please try again." << endl;
+		enterToContinue(in, out);
+		free(tasks);
+		return;
+	}
+
+	const char* taskDescription = selectedTask->description;
+	buildHuffmanTree(pathFileTasks, taskDescription, strlen(taskDescription));
+	string encoded = encode(taskDescription, strlen(taskDescription));
+
+	printCodes(out);
+	out << "\nEncoded description for \"" << selectedTask->name << "\": " << encoded << endl;
+	enterToContinue(in, out);
+	free(tasks);
+}
+
+
+
