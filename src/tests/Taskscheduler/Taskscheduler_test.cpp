@@ -1038,6 +1038,144 @@ TEST_F(TaskschedulerTest, huffmanEncodingTaskMenu_NoTasks) {
 	remove(pathFileTasks);
 }
 
+TEST_F(TaskschedulerTest, huffmanEncodingTaskMenu_InvalidTaskId) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("3\n\n");
+	std::stringstream output;
+
+	huffmanEncodingTaskMenu(pathFileTasks, input, output);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, huffmanEncodingTaskMenu_ValidTaskId) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "This is a sample task description.", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Another task description.", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n\n");
+	std::stringstream output;
+
+	huffmanEncodingTaskMenu(pathFileTasks, input, output);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, analyzeSCC_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	bool result = analyzeSCC(pathFileTasks, input, output);
+
+	EXPECT_FALSE(result);
+
+	remove(pathFileTasks);
+}
+
+
+TEST_F(TaskschedulerTest, GuestOperation1) {
+	simulateUserInput("8\n\n\n1\n2\n3\n");
+	EXPECT_EQ(guestOperation(in, out), 0);
+}
+
+TEST_F(TaskschedulerTest, GuestOperation2) {
+	simulateUserInput("1\n\n2\n3\n");
+	EXPECT_EQ(guestOperation(in, out), 0);
+}
+
+
+TEST_F(TaskschedulerTest, MainMenu1) {
+	simulateUserInput("asd\n\n3\n2\n4\n");
+	EXPECT_EQ(mainMenu(in, out), 0);
+}
+
+TEST_F(TaskschedulerTest, MainMenu2) {
+	simulateUserInput("1\nrs\na\n4\n");
+	EXPECT_EQ(mainMenu(in, out), 0);
+}
+
+
+TEST_F(TaskschedulerTest, LoginUser_Success) {
+	const char* pathFileUsers = "test_users.bin";
+	User usersToWrite[2] = {
+		{1, "TestName1", "TestSurname1", "test1@example.com", "password1"},
+		{2, "TestName2", "TestSurname2", "test2@example.com", "password2"}
+	};
+
+	std::ofstream file(pathFileUsers, std::ios::binary);
+	int userCount = 2;
+	file.write(reinterpret_cast<const char*>(&userCount), sizeof(int));
+	file.write(reinterpret_cast<const char*>(&usersToWrite), sizeof(usersToWrite));
+	file.close();
+
+	simulateUserInput("\n");
+
+	User loginUser = { 2, "TestName2", "TestSurname2", "test2@example.com", "password2" };
+	EXPECT_EQ(::loginUser(loginUser, pathFileUsers, in, out), 1);
+
+	remove(pathFileUsers);
+}
+
+TEST_F(TaskschedulerTest, LoginUser_Failure) {
+	const char* pathFileUsers = "test_users.bin";
+	User usersToWrite[2] = {
+		{1, "TestName1", "TestSurname1", "test1@example.com", "password1"},
+		{2, "TestName2", "TestSurname2", "test2@example.com", "password2"}
+	};
+
+	std::ofstream file(pathFileUsers, std::ios::binary);
+	int userCount = 2;
+	file.write(reinterpret_cast<const char*>(&userCount), sizeof(int));
+	file.write(reinterpret_cast<const char*>(&usersToWrite), sizeof(usersToWrite));
+	file.close();
+
+	simulateUserInput("\n");
+
+	User loginUser = { 2, "TestName2", "TestSurname2", "test2@example.com", "wrongpassword" };
+	EXPECT_EQ(::loginUser(loginUser, pathFileUsers, in, out), 0);
+
+	remove(pathFileUsers);
+}
+
+TEST_F(TaskschedulerTest, loginUserMenu_Success) {
+	const char* pathFileUsers = "test_users.bin";
+	User usersToWrite[2] = {
+		{1, "TestName1", "TestSurname1", "test1@example.com", "password1"},
+		{2, "TestName2", "TestSurname2", "test2@example.com", "password2"}
+	};
+
+	std::ofstream file(pathFileUsers, std::ios::binary);
+	int userCount = 2;
+	file.write(reinterpret_cast<const char*>(&userCount), sizeof(int));
+	file.write(reinterpret_cast<const char*>(usersToWrite), sizeof(usersToWrite));
+	file.close();
+
+	simulateUserInput("test2@example.com\npassword2\n\n");
+
+	EXPECT_EQ(::loginUserMenu(pathFileUsers, in, out), 1);
+
+	remove(pathFileUsers);
+}
 
 int main(int argc, char** argv) {
 #ifdef ENABLE_TASKSCHEDULER_TEST
