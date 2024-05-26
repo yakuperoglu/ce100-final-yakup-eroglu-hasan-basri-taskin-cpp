@@ -645,6 +645,225 @@ TEST_F(TaskschedulerTest, assignDeadline_InvalidDate) {
 }
 
 
+TEST_F(TaskschedulerTest, markTaskImportance_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	EXPECT_EQ(markTaskImportance(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, markTaskImportance_WithTasks) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n3\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(markTaskImportance(pathFileTasks, input, output), 1);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, markTaskImportance_InvalidImportanceId) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n-1\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(markTaskImportance(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, markTaskImportance_InvalidTaskId) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "", "", false, false, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "", "", false, false, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("3\n3\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(markTaskImportance(pathFileTasks, input, output), 0);
+
+
+	remove(pathFileTasks);
+}
+
+
+TEST_F(TaskschedulerTest, reorderTask_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	EXPECT_EQ(reorderTask(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, reorderTask_WithTasks) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 2, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 1, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n3\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(reorderTask(pathFileTasks, input, output), 1);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, reorderTask_InvalidTaskId) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 2, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 1, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("3\n6\n\n");
+	std::stringstream output;
+
+	EXPECT_EQ(reorderTask(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+
+TEST_F(TaskschedulerTest, similarTasks_NotEnoughTasks) {
+	const char* pathFileTasks = "few_tasks.bin";
+	Task tasksToWrite[1] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 1, file);
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	EXPECT_FALSE(similarTasks(pathFileTasks, input, output));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, similarTasks_FoundSimilarTasks) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[3] = {
+		{1, 0, loggedUser, "Task 1", "Similar description", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Similar description", "2024-01-02", "Category 2", true, true, {}, 0},
+		{3, 0, loggedUser, "Task 3", "Different description", "2024-01-03", "Category 3", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 3, file);
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	EXPECT_TRUE(similarTasks(pathFileTasks, input, output));
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, similarTasks_NoSimilarTasks) {
+	const char* pathFileTasks = "tasks_with_no_similarities.bin";
+	Task tasksToWrite[3] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0},
+		{3, 0, loggedUser, "Task 3", "Description 3", "2024-01-03", "Category 3", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 3, file);
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	EXPECT_TRUE(similarTasks(pathFileTasks, input, output));
+
+	remove(pathFileTasks);
+}
+
+
+TEST_F(TaskschedulerTest, allegiances_NoTasks) {
+	const char* pathFileTasks = "empty_tasks.bin";
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fclose(file);
+
+	std::stringstream input("\n");
+	std::stringstream output;
+
+	EXPECT_EQ(allegiances(pathFileTasks, input, output), 0);
+
+	remove(pathFileTasks);
+}
+
+TEST_F(TaskschedulerTest, allegiances_BFS) {
+	const char* pathFileTasks = "tasks_with_entries.bin";
+	Task tasksToWrite[2] = {
+		{1, 0, loggedUser, "Task 1", "Description 1", "2024-01-01", "Category 1", true, true, {}, 0},
+		{2, 0, loggedUser, "Task 2", "Description 2", "2024-01-02", "Category 2", true, true, {}, 0}
+	};
+
+	FILE* file = fopen(pathFileTasks, "wb");
+	fwrite(tasksToWrite, sizeof(Task), 2, file);
+	fclose(file);
+
+	std::stringstream input("1\n1\n\n");
+	std::stringstream output;
+
+	EXPECT_TRUE(allegiances(pathFileTasks, input, output));
+
+	remove(pathFileTasks);
+}
+
+
 int main(int argc, char** argv) {
 #ifdef ENABLE_TASKSCHEDULER_TEST
 	::testing::InitGoogleTest(&argc, argv);
