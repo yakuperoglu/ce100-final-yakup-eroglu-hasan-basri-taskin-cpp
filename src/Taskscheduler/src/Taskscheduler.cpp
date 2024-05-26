@@ -2281,3 +2281,320 @@ void decryptData(uint8_t* data, size_t length) {
 
 //Algorithms
 
+
+//LOGIN REGISTER
+
+/**
+ * @brief Logs in a user by verifying email and password.
+ *
+ * This function opens the user file, reads registered users, and checks if the provided email and password match any user.
+ *
+ * @param loginUser The user attempting to log in.
+ * @param pathFileUsers Path to the binary file containing user data.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying messages.
+ * @return int Returns 1 if login is successful, otherwise 0.
+ */
+int loginUser(User loginUser, const char* pathFileUsers, istream& in, ostream& out) {
+	ifstream file(pathFileUsers, ios::binary);
+	if (!file.is_open()) {
+		out << "Failed to open user file." << endl;
+		return 0;
+	}
+
+	int userCount = 0;
+	file.read(reinterpret_cast<char*>(&userCount), sizeof(int));
+	if (userCount == 0) {
+		out << "No users registered." << endl;
+		file.close();
+		enterToContinue(in, out);
+		return 0;
+	}
+
+	User userFromFile;
+	for (int i = 0; i < userCount; i++) {
+		file.read(reinterpret_cast<char*>(&userFromFile), sizeof(User));
+		if (strcmp(userFromFile.email, loginUser.email) == 0 && strcmp(userFromFile.password, loginUser.password) == 0) {
+			out << "Login successful. Welcome " << endl;
+			file.close();
+			enterToContinue(in, out);
+			loggedUser = userFromFile;
+			return 1;
+		}
+	}
+
+	out << "Incorrect email or password." << endl;
+	file.close();
+	enterToContinue(in, out);
+	return 0;
+}
+
+/**
+ * @brief Displays and handles the login user menu.
+ *
+ * This function displays the login menu and processes user input to log in a user.
+ *
+ * @param pathFileUsers Path to the binary file containing user data.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 1 if login is successful, otherwise 0.
+ */
+int loginUserMenu(const char* pathFileUsers, istream& in, ostream& out) {
+	clearScreen();
+	User loginUsers;
+
+	out << "Enter email: ";
+	in.getline(loginUsers.email, sizeof(loginUsers.email));
+
+	out << "Enter password: ";
+	in.getline(loginUsers.password, sizeof(loginUsers.password));
+
+	return loginUser(loginUsers, pathFileUsers, in, out);
+}
+
+/**
+ * @brief Registers a new user by adding them to the user file.
+ *
+ * This function opens the user file, checks if the email is already registered, and adds the new user to the file.
+ *
+ * @param user The new user to be registered.
+ * @param pathFileUser Path to the binary file containing user data.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying messages.
+ * @return int Returns 1 if registration is successful, otherwise 0.
+ */
+int registerUser(User user, const char* pathFileUser, istream& in, ostream& out) {
+	fstream file(pathFileUser, ios::binary | ios::in | ios::out);
+	int userCount = 0;
+	User* users = nullptr;
+
+	if (file.is_open()) {
+		file.read(reinterpret_cast<char*>(&userCount), sizeof(int));
+		if (userCount > 0) {
+			users = new User[userCount];
+			file.read(reinterpret_cast<char*>(users), sizeof(User) * userCount);
+
+			for (int i = 0; i < userCount; ++i) {
+				if (strcmp(users[i].email, user.email) == 0) {
+					out << "User already exists." << endl;
+					file.close();
+					delete[] users;
+					enterToContinue(in, out);
+					return 0;
+				}
+			}
+		}
+		file.seekg(0, ios::beg);
+	}
+	else {
+		file.open(pathFileUser, ios::binary | ios::out);
+	}
+
+	user.id = getNewUserId(users, userCount);
+	userCount++;
+	User* updatedUsers = new User[userCount];
+	if (users) {
+		copy(users, users + (userCount - 1), updatedUsers);
+		delete[] users;
+	}
+	updatedUsers[userCount - 1] = user;
+
+	file.write(reinterpret_cast<const char*>(&userCount), sizeof(int));
+	file.write(reinterpret_cast<const char*>(updatedUsers), sizeof(User) * userCount);
+
+	out << "User registered successfully " << endl;
+
+	delete[] updatedUsers;
+	file.close();
+	enterToContinue(in, out);
+	return 1;
+}
+
+/**
+ * @brief Displays and handles the register user menu.
+ *
+ * This function displays the register menu and processes user input to register a new user.
+ *
+ * @param pathFileUsers Path to the binary file containing user data.
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Returns 1 if registration is successful, otherwise 0.
+ */
+int registerUserMenu(const char* pathFileUsers, istream& in, ostream& out) {
+	clearScreen();
+	User newUser;
+
+	out << "Enter Name: ";
+	in.getline(newUser.name, sizeof(newUser.name));
+
+	out << "Enter Surname: ";
+	in.getline(newUser.surname, sizeof(newUser.surname));
+
+	out << "Enter email: ";
+	in.getline(newUser.email, sizeof(newUser.email));
+
+	out << "Enter password: ";
+	in.getline(newUser.password, sizeof(newUser.password));
+
+	if (registerUser(newUser, pathFileUsers, in, out)) {
+		return 1;
+	}
+	else {
+		out << "Registration failed." << endl;
+	}
+
+	enterToContinue(in, out);
+	return 1;
+}
+
+
+//LOGIN REGISTER
+
+/**
+ * @brief Handles guest operations menu.
+ *
+ * This function displays the guest menu, processes user input, and performs actions based on the guest's choice.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Always returns 0 to indicate the guest operation is complete.
+ */
+int guestOperation(istream& in, ostream& out) {
+	int choice;
+
+	while (true) {
+		printGuestMenu(out);
+		choice = getInput(in);
+
+		if (in.fail()) {
+			handleInputError(in, out);
+			continue;
+		}
+
+		switch (choice) {
+		case 1:
+			clearScreen();
+			out << "1. Work" << endl;
+			out << "2. Sport" << endl;
+			out << "3. Diet" << endl;
+			out << "4. Study" << endl;
+			enterToContinue(in, out);
+			break;
+
+		case 2:
+			return 0;
+
+		default:
+			out << "\nInvalid choice. Please try again.\n";
+			enterToContinue(in, out);
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Handles user operations menu.
+ *
+ * This function displays the user menu, processes user input, and performs actions based on the user's choice.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Always returns 0 to indicate the user operation is complete.
+ */
+int userOperations(istream& in, ostream& out) {
+	int choice;
+
+	while (true) {
+		printUserMenu(out);
+		choice = getInput(in);
+
+		if (in.fail()) {
+			handleInputError(in, out);
+			continue;
+		}
+
+		switch (choice) {
+		case 1:
+			createTaskMenu(in, out);
+			break;
+
+		case 2:
+			deadlineSettingsMenu(in, out);
+			break;
+
+		case 3:
+			reminderSystemMenu(in, out);
+			break;
+
+		case 4:
+			taskPrioritizationMenu(in, out);
+			break;
+
+		case 5:
+			flowAlgorithmsMenu(in, out);
+			break;
+
+		case 6:
+			return 0;
+
+		default:
+			out << "\nInvalid choice. Please try again.\n";
+			enterToContinue(in, out);
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Handles the main menu.
+ *
+ * This function displays the main menu, processes user input, and performs actions based on the user's choice.
+ *
+ * @param in Input stream for reading user input.
+ * @param out Output stream for displaying the menu and messages.
+ * @return int Always returns 0 to indicate the main menu operation is complete.
+ */
+int mainMenu(istream& in, ostream& out) {
+	int choice;
+
+	while (true) {
+		printMainMenu(out);
+		choice = getInput(in);
+
+		if (in.fail()) {
+			handleInputError(in, out);
+			continue;
+		}
+
+		switch (choice) {
+		case 1:
+			clearScreen();
+			if (loginUserMenu(pathFileUsers, in, out)) {
+				userOperations(in, out);
+			}
+			break;
+
+		case 2:
+			clearScreen();
+			registerUserMenu(pathFileUsers, in, out);
+			break;
+
+		case 3:
+			clearScreen();
+			out << "Guest Operations\n";
+			guestOperation(in, out);
+			break;
+
+		case 4:
+			clearScreen();
+			out << "Exit Program\n";
+			return 0;
+
+		default:
+			out << "\nInvalid choice. Please try again.\n";
+			enterToContinue(in, out);
+			break;
+		}
+	}
+}
+
